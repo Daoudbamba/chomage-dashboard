@@ -1,44 +1,69 @@
 "use client";
 
-import { Bar, BarChart, Cell, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, Cell, LabelList, Tooltip, XAxis, YAxis } from "recharts";
+import { frPct } from "../lib/regionInsights";
 import { useElementWidth } from "../lib/useElementWidth";
+
+const TONES = {
+  high: "#F27554",
+  low: "#2D8F8A",
+};
 
 export default function RankingChart({
   data,
+  tone = "high",
 }: {
   data: { libelle: string; taux: number }[];
+  tone?: "high" | "low";
 }) {
-  const sorted = [...data].sort((a, b) => b.taux - a.taux).slice(0, 15);
   const [ref, width] = useElementWidth<HTMLDivElement>();
+  const narrow = width > 0 && width < 520;
+  const rowHeight = 30;
+  const height = data.length * rowHeight + 40;
 
   return (
-    <div ref={ref} style={{ width: "100%", height: 480 }}>
+    <div ref={ref} style={{ width: "100%", height }}>
       {width > 0 && (
         <BarChart
           width={width}
-          height={480}
-          data={sorted}
+          height={height}
+          data={data}
           layout="vertical"
-          margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+          margin={{ top: 4, right: narrow ? 44 : 56, left: 4, bottom: 4 }}
         >
-          <XAxis type="number" tick={{ fill: "#56616F", fontSize: 11 }} axisLine={false} tickLine={false} unit="%" />
+          <XAxis
+            type="number"
+            domain={[0, (max: number) => Math.ceil((max + 0.5) / 4) * 4]}
+            tick={{ fill: "#4B5663", fontSize: 12 }}
+            axisLine={false}
+            tickLine={false}
+            unit="%"
+          />
           <YAxis
             type="category"
             dataKey="libelle"
-            tick={{ fill: "#8D98AC", fontSize: 11 }}
-            width={150}
+            tick={{ fill: "#16202B", fontSize: narrow ? 11 : 12 }}
+            width={narrow ? 118 : 168}
+            tickFormatter={(name: string) => (narrow && name.length > 15 ? `${name.slice(0, 14)}…` : name)}
             axisLine={false}
             tickLine={false}
           />
           <Tooltip
-            contentStyle={{ background: "#11161D", border: "1px solid rgba(255,255,255,0.1)", fontSize: 12 }}
-            labelStyle={{ color: "#EDF1F7" }}
-            formatter={(value: number) => [`${value}%`, "Taux"]}
+            cursor={{ fill: "rgba(22,32,43,0.05)" }}
+            contentStyle={{ background: "#FFFFFF", border: "1px solid rgba(22,32,43,0.15)", fontSize: 12 }}
+            labelStyle={{ color: "#16202B" }}
+            formatter={(value: number) => [frPct(value), "Taux"]}
           />
-          <Bar dataKey="taux" radius={[0, 3, 3, 0]}>
-            {sorted.map((entry, index) => (
-              <Cell key={entry.libelle} fill={index < 3 ? "#7C6CFF" : "#2DD4A7"} fillOpacity={index < 3 ? 0.9 : 0.6} />
+          <Bar dataKey="taux" radius={[0, 3, 3, 0]} barSize={18} animationDuration={700}>
+            {data.map((entry, index) => (
+              <Cell key={entry.libelle} fill={TONES[tone]} fillOpacity={index < 3 ? 1 : 0.55} />
             ))}
+            <LabelList
+              dataKey="taux"
+              position="right"
+              formatter={(value: number) => frPct(value)}
+              style={{ fill: "#16202B", fontSize: 12, fontWeight: 600 }}
+            />
           </Bar>
         </BarChart>
       )}
