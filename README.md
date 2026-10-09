@@ -38,14 +38,32 @@ Au premier démarrage, le backend charge automatiquement les données (ETL) si l
 ## Tests
 
 ```bash
+# Backend (pytest)
 cd backend
+python3 -m venv .venv
+. .venv/bin/activate
 pip install -r requirements-dev.txt
 pytest -v
+
+# Frontend (Vitest)
+cd ../frontend
+npm install
+npm run test:ci
 ```
 
-Les tests couvrent la logique de transformation (reshape wide→long, gestion des valeurs
-manquantes, doublons de codes région) sur un classeur de test synthétique — pas sur le fichier
-INSEE réel, pour rester rapides et déterministes.
+Les tests couvrent :
+
+- la logique ETL backend (reshape wide→long, valeurs manquantes, cohérence des lignes nationales/régionales) ;
+- les utilitaires frontend d'insights (variation trimestrielle, formatage, génération des messages clés).
+
+## CI/CD
+
+Le pipeline GitHub Actions est défini dans [CI](.github/workflows/ci.yml) et s'exécute sur chaque push/PR vers `main`.
+
+- Job 1 : tests backend (`pytest -v`)
+- Job 2 : tests frontend (`npm run test:ci`) + build Next.js (`npm run build`)
+
+L'objectif est de bloquer les régressions fonctionnelles et visuelles avant merge.
 
 ## Source des données
 
